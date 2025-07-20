@@ -1,7 +1,8 @@
 # FastAPI Backend
 
 Professional backend structure for FastAPI projects.
-\n\n## Directory Structure Overview\n\n```
+\n\n## Directory Structure Overview\n\n
+```
 fastapi_backend/
 ├── app/
 │   ├── api/                # API route definitions (routers)
