@@ -1,0 +1,10 @@
+[tool.poetry]
+name = "fastapi-backend"
+version = "0.1.0"
+description = "Professional FastAPI backend structure"
+authors = ["Your Name <your.email@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastapi = "*"
+uvicorn = "*"
