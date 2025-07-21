@@ -56,6 +56,42 @@ fastapi_backend/
 
 ---
 
+
+---
+
+## Database Migrations with Alembic
+
+For handling database migrations Alembic is used here. Below are the command and steps:
+
+### 1. Initialize Alembic (only once, already done in this repo)
+```bash
+alembic init alembic
+```
+
+### 2. Generate a New Migration
+Autogenerate migration scripts based on your models:
+```bash
+alembic revision --autogenerate -m "Migration message"
+```
+
+### 3. Apply Migrations
+Upgrade your database to the latest revision:
+```bash
+alembic upgrade head
+```
+
+### 4. Downgrade (if needed)
+Revert the last migration:
+```bash
+alembic downgrade -1
+```
+
+### 5. Alembic Configuration
+- Edit `alembic.ini` for DB connection settings if needed.
+- Edit `alembic/env.py` to set up model imports and metadata.
+
+---
+
 ## .env Template
 
 Create a `.env` file in your project root with the following content:
