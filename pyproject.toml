@@ -1,10 +1,20 @@
 [tool.poetry]
-name = "fastapi-backend"
+name = "ExpireEye-backend"
 version = "0.1.0"
-description = "Professional FastAPI backend structure"
-authors = ["Your Name <your.email@example.com>"]
+description = "Backend for ExpireEye, a web application to track and manage expiration dates of products."
+authors = ["Aaditya Thapa aadityathapa977@gmail.com", "Kushal Shrestha shresthakusal133@gmail.com"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
 fastapi = "*"
 uvicorn = "*"
+sqlalchemy = "^2.0"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+skip-string-normalization = false
+
+[tool.isort]
+profile = "black"
+line_length = 88

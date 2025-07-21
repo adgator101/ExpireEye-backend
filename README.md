@@ -53,3 +53,21 @@ fastapi_backend/
 3. API documentation:
    - Swagger UI: http://127.0.0.1:8000/docs
    - ReDoc: http://127.0.0.1:8000/redoc
+
+---
+
+## .env Template
+
+Create a `.env` file in your project root with the following content:
+
+```env
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+DB_HOST=your_db_host
+DB_PORT=3306
+DB_NAME=your_db_name
+```
+
+- Replace values with your actual credentials.
+
+

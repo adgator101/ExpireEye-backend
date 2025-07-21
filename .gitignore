@@ -3,3 +3,14 @@ __pycache__/
 *.pyc
 alembic/versions/
 .venv/
+
+
+# Environment
+.env
+
+# IDE/editor
+.vscode/
+*.swp
+
+# OS
+.DS_Store
