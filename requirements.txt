@@ -5,3 +5,7 @@ pydantic
 python-dotenv
 pymysql
 alembic
+bcrypt
+PyJWT
+uuid
+requests

@@ -102,6 +102,7 @@ DB_PASSWORD=your_db_password
 DB_HOST=your_db_host
 DB_PORT=3306
 DB_NAME=your_db_name
+SECRET_KEY=your_jwt_secret_token
 ```
 
 - Replace values with your actual credentials.
