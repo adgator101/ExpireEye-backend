@@ -1,110 +1,55 @@
-# FastAPI Backend
+# ExpireEye
 
-Professional backend structure for FastAPI projects.
-\n\n## Directory Structure Overview\n\n
+This repository contains both the backend (FastAPI, Alembic, SQLAlchemy) and frontend (React, Vite, Tailwind CSS, Shadcn UI) for the ExpireEye project.
+
+## Structure
+
 ```
-fastapi_backend/
-├── app/
-│   ├── api/                # API route definitions (routers)
-│   ├── core/               # Core settings, config, security
-│   ├── models/             # Pydantic models and ORM models
-│   ├── db/                 # Database session, migrations
-│   ├── services/           # Business logic/services
-│   ├── schemas/            # Request/response schemas
-│   ├── utils/              # Utility/helper functions
-│   ├── main.py             # FastAPI app entrypoint
-│   └── dependencies.py     # Dependency injection
-├── alembic/                # Database migrations (if using Alembic)
-├── requirements.txt        # Python dependencies
-├── README.md               # Project documentation
-├── .env                    # Environment variables
-├── .gitignore              # Git ignore rules
-└── pyproject.toml          # Project metadata/config (optional)
+backend/   # FastAPI backend
+frontend/  # React frontend
+.gitignore # Root ignore rules
 ```
 
-### Folder & File Descriptions
+## Backend
 
-  - **api/**: Contains API route definitions, organized by version (e.g., v1, v2).
-  - **core/**: Core settings, configuration, and security logic.
-  - **models/**: Database ORM models and Pydantic data models.
-  - **db/**: Database session management and migration scripts.
-  - **services/**: Business logic and service layer functions.
-  - **schemas/**: Pydantic schemas for request and response validation.
-  - **utils/**: Utility and helper functions.
-  - **main.py**: FastAPI application entrypoint.
-  - **dependencies.py**: Dependency injection functions for routes/services.
+- Located in `backend/`
+- FastAPI REST API
+- Alembic for migrations
+- SQLAlchemy ORM
 
----
+## Frontend
 
-## How to Run the App
+- Located in `frontend/`
+- React (Vite)
+- React Router for routing
+- Shadcn UI for components
 
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Getting Started
 
-2. Start the FastAPI server with Uvicorn:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-   - The `--reload` flag enables auto-reload on code changes (useful for development).
-   - By default, the app will be available at http://127.0.0.1:8000
+### Backend
 
-3. API documentation:
-   - Swagger UI: http://127.0.0.1:8000/docs
-   - ReDoc: http://127.0.0.1:8000/redoc
-
----
-
-
----
-
-## Database Migrations with Alembic
-
-For handling database migrations Alembic is used here. Below are the command and steps:
-
-### 1. Initialize Alembic (only once, already done in this repo)
-```bash
-alembic init alembic
+```sh
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
 ```
 
-### 2. Generate a New Migration
-Autogenerate migration scripts based on your models:
-```bash
-alembic revision --autogenerate -m "Migration message"
+### Frontend
+
+```sh
+cd frontend
+npm install
+npm run dev
 ```
 
-### 3. Apply Migrations
-Upgrade your database to the latest revision:
-```bash
-alembic upgrade head
-```
+## Development Notes
 
-### 4. Downgrade (if needed)
-Revert the last migration:
-```bash
-alembic downgrade -1
-```
+- Keep secrets in `backend/.env` (not committed)
+- Use `credentials: "include"` in frontend fetch/axios for cookie-based auth
+- All code and config for backend and frontend are separated for clarity
 
-### 5. Alembic Configuration
-- Edit `alembic.ini` for DB connection settings if needed.
-- Edit `alembic/env.py` to set up model imports and metadata.
+## License
 
----
-
-## .env Template
-
-Create a `.env` file in your project root with the following content:
-
-```env
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_HOST=your_db_host
-DB_PORT=3306
-DB_NAME=your_db_name
-SECRET_KEY=your_jwt_secret_token
-```
-
-- Replace values with your actual credentials.
-
-
+MIT

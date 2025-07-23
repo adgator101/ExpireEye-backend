@@ -1,16 +1,21 @@
+# Python
+venv/
 __pycache__/
-.env
 *.pyc
-alembic/versions/
-.venv/
 
+# Node/React
+frontend/node_modules/
+frontend/build/
 
-# Environment
-.env
+# Environment/config
+backend/.env
+frontend/.env
+# Alembic
+backend/alembic/versions/__pycache__/
 
-# IDE/editor
+# VSCode
 .vscode/
-*.swp
 
-# OS
+# OS files
 .DS_Store
+Thumbs.db
