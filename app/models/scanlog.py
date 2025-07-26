@@ -4,6 +4,7 @@ from app.models.base import Base
 import enum
 import uuid
 
+
 class ScanStatus(enum.Enum):
     scanned = "scanned"
     expired = "expired"
@@ -17,5 +18,6 @@ class ScanLog(Base):
     userId = Column(String(36), ForeignKey("users.id"), nullable=False)
     barcode = Column(String(255), nullable=False)
     productId = Column(String(36), ForeignKey("products.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)
     status = Column(Enum(ScanStatus), nullable=False)
     scanned_at = Column(String(255), nullable=False)

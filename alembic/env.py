@@ -12,6 +12,7 @@ from app.models.product import Product
 from app.models.scanlog import ScanLog
 from app.models.nutrition import Nutrition
 from app.models.notification import Notification
+from app.models.user_product import UserProduct
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -28,7 +29,7 @@ DB_NAME = os.getenv("DB_NAME")
 
 config.set_main_option(
     "sqlalchemy.url",
-    f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
 )
 
 # Interpret the config file for Python logging.

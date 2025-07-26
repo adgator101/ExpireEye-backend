@@ -16,7 +16,7 @@ class Notification(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     userId = Column(String(36), ForeignKey("users.id"), nullable=False)
-    productId = Column(String(36), ForeignKey("products.id"), nullable=False)
+    userProductId = Column(String(36), ForeignKey("userProducts.id"), nullable=False)
     message = Column(String(255), nullable=False)
     type = Column(Enum(NotificationType), nullable=False)
     created_at = Column(String(255), nullable=False)

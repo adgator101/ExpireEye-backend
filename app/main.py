@@ -1,23 +1,43 @@
 from fastapi import FastAPI, Request
-from app.routes.auth import router as auth_router
-from app.routes.product import router as product_router
+from app.routers.auth import router as auth_router
+from app.routers.product import router as product_router
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import request_validation_exception_handler
 from app.utils.jwt import decode_access_token
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(root_path="/api", root_path_in_servers="/api")
+
+origins = [
+    "http://localhost:5173",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.middleware("http")
 async def access_token_middleware(request: Request, call_next):
-    public_paths = ["/api/auth/login", "/api/auth/signup", "/api/status"]
+    public_paths = [
+        "/api/auth/login",
+        "/api/auth/signup",
+        "/api/status",
+        "/docs",
+        "/redoc",
+        "/api/openapi.json",
+    ]
 
     # Skip access token check for public paths
     if request.url.path in public_paths:
         return await call_next(request)
 
     access_token = request.cookies.get("access_token")
+
     if not access_token:
         return JSONResponse(
             status_code=401,
@@ -56,10 +76,10 @@ async def custom_validation_exception_handler(
     return JSONResponse(status_code=422, content={"errors": custom_errors})
 
 
-@app.get("/status")
+@app.get("/status", tags=["Status"])
 def status():
     return {"status": "OK", "message": "Server Is Running"}
 
 
-app.include_router(auth_router, prefix="/auth")
-app.include_router(product_router, prefix="/product")
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(product_router, prefix="/product", tags=["Products"])

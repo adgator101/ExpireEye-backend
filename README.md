@@ -103,6 +103,7 @@ DB_HOST=your_db_host
 DB_PORT=3306
 DB_NAME=your_db_name
 SECRET_KEY=your_jwt_secret_token
+NUTRITION_API_KEY=your_api_ninja_nutrition_key
 ```
 
 - Replace values with your actual credentials.
