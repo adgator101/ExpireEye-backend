@@ -7,11 +7,11 @@ from sqlalchemy import pool
 
 from alembic import context
 from app.models.base import Base
-from app.models.user import User
-from app.models.product import Product
-from app.models.scanlog import ScanLog
-from app.models.nutrition import Nutrition
-from app.models.notification import Notification
+from app.models.user_model import User
+from app.models.product_model import Product
+from app.models.scanlog_model import ScanLog
+from app.models.nutrition_model import Nutrition
+from app.models.notification_model import Notification
 from app.models.user_product import UserProduct
 
 # this is the Alembic Config object, which provides

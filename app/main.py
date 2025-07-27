@@ -1,11 +1,13 @@
 from fastapi import FastAPI, Request
-from app.routers.auth import router as auth_router
-from app.routers.product import router as product_router
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import request_validation_exception_handler
 from app.utils.jwt import decode_access_token
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.routers.auth import router as auth_router
+from app.routers.warehouse import router as product_router
+from app.routers.user_inventory import router as user_inventory_router
 
 app = FastAPI(root_path="/api", root_path_in_servers="/api")
 
@@ -82,4 +84,5 @@ def status():
 
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
-app.include_router(product_router, prefix="/product", tags=["Products"])
+app.include_router(product_router, prefix="/product", tags=["Product Inventory"])
+app.include_router(user_inventory_router, prefix="/product", tags=["User Inventory"])

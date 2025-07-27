@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
-from app.schemas.auth import LoginRequest, RegisterRequest
+from app.schemas.auth_schema import LoginRequest, RegisterRequest
 from app.utils.errors import AuthError
-from app.models.user import User
+from app.models.user_model import User
 from app.db.session import get_db
 import bcrypt
 from datetime import datetime

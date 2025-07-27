@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from app.models.base import Base
 import uuid
 
+
 class Nutrition(Base):
     __tablename__ = "nutritions"
 
@@ -12,3 +13,4 @@ class Nutrition(Base):
     fat = Column(String(255), nullable=False)
     fiber = Column(String(255), nullable=False)
     calories = Column(String(255), nullable=False)
+    addedAt = Column(String(255), nullable=False)

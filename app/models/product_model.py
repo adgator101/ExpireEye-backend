@@ -13,3 +13,4 @@ class Product(Base):
     barcode = Column(String(255), nullable=False, unique=True)
     nutritionId = Column(String(36), ForeignKey("nutritions.id"), nullable=True)
     addedAt = Column(String(255), nullable=False)
+    updatedAt = Column(String(255), nullable=True)
