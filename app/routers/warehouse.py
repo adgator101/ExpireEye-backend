@@ -214,3 +214,16 @@ def delete_product(product_id: str, request: Request, db: Session = Depends(get_
     db.commit()
 
     return {"message": "Product deleted successfully"}
+
+
+@router.get("/barcodes")
+def get_products_barcode(db: Session = Depends(get_db)):
+    products = db.query(Product).all()
+    result = [
+        {
+            "productName": product.name,
+            "barcode": product.barcode,
+        }
+        for product in products
+    ]
+    return {"products": result}

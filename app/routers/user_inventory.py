@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi import APIRouter, Request, HTTPException, Depends, File, UploadFile
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.product_model import Product
@@ -198,3 +198,56 @@ def delete_user_product(
     db.commit()
 
     return {"message": "Product removed from user inventory successfully."}
+
+
+@router.post("/user/scan", tags=["Scan User Product"])
+async def scan_user_product(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    access_token = request.state.user
+    user_id = access_token.get("userId")
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not authenticated.")
+
+    contents = await file.read()
+
+    with open(f"app/static/{file.filename}", "wb") as f:
+        f.write(contents)
+
+    return {
+        "message": "File processed successfully",
+        "userId": user_id,
+        "fileName": file.filename,
+    }
+
+
+@router.get("/{barcode}")
+def get_product_by_barcode(barcode: str, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.barcode == barcode).first()
+
+    nutrition_data = (
+        db.query(Nutrition).filter(Nutrition.id == product.nutritionId).first()
+        if product
+        else None
+    )
+
+    if nutrition_data:
+        nutrition = {
+            "protein": nutrition_data.protein,
+            "carbohydrate": nutrition_data.carbohydrate,
+            "fat": nutrition_data.fat,
+            "fiber": nutrition_data.fiber,
+            "calories": nutrition_data.calories,
+        }
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found.")
+
+    return {
+        "productName": product.name,
+        "category": product.category,
+        "nutrition": nutrition if nutrition else {},
+    }
