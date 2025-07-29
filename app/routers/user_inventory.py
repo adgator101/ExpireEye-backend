@@ -7,7 +7,7 @@ from app.models.user_model import User
 from app.schemas.product_schema import AddUserProductRequest, UpdateUserProductRequest
 from app.models.user_product import UserProduct
 from app.utils.product_utils import check_user_product_exists
-from datetime import datetime
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -21,8 +21,8 @@ def add_user_product(
 
     product_name = product.name
     quantity = product.quantity
-    expiry_date = product.expiryDate
-
+    expiry_date = (datetime.utcnow() + timedelta(seconds=20)).isoformat()
+    
     exists_user = db.query(User).filter_by(id=user_id).first()
 
     if not exists_user:

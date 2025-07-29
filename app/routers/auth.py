@@ -53,9 +53,8 @@ def login(data: LoginRequest, response: Response, db: Session = Depends(get_db))
 
 
 @router.post("/signup")
-def signup(data: RegisterRequest, db: Session = Depends(get_db)):
+def signup(data: RegisterRequest, response: Response, db: Session = Depends(get_db)):
     try:
-
         name = data.name
         email = data.email
         password = data.password
@@ -96,6 +95,17 @@ def signup(data: RegisterRequest, db: Session = Depends(get_db)):
         # Commit the transaction
         db.commit()
         db.refresh(new_user)
+
+        access_token = create_access_token(
+            data={"userId": new_user.id, "email": new_user.email}
+        )
+
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            max_age=10 * 24 * 60 * 60,  # 10 days in seconds
+        )
 
         return {
             "message": "User created successfully",
