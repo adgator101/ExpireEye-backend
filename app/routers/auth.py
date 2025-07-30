@@ -40,6 +40,10 @@ def login(data: LoginRequest, response: Response, db: Session = Depends(get_db))
             key="access_token",
             value=access_token,
             httponly=True,
+            samesite="lax",
+            secure=False,
+            path="/",
+            domain="localhost",
             max_age=10 * 24 * 60 * 60,  # 10 days in seconds
         )
 

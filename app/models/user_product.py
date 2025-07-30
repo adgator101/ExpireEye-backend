@@ -1,7 +1,13 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from app.models.base import Base
 import uuid
+import enum
+
+
+class UserProductStatus(enum.Enum):
+    active = "active"
+    expired = "expired"
 
 
 class UserProduct(Base):
@@ -12,5 +18,6 @@ class UserProduct(Base):
     productId = Column(String(36), ForeignKey("products.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
     expiryDate = Column(String(255), nullable=False)
+    status = Column(String(20), nullable=False, default=UserProductStatus.active)
     addedAt = Column(String(255), nullable=False)
     updatedAt = Column(String(255), nullable=False)

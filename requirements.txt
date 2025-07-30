@@ -10,3 +10,6 @@ PyJWT
 uuid
 requests
 python-multipart
+websockets
+asyncio
+apscheduler
