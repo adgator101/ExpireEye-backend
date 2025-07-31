@@ -10,9 +10,11 @@ from app.models.user_product import UserProduct
 from app.models.product_model import Product
 from datetime import datetime
 
+
 from app.routers.auth import router as auth_router
 from app.routers.warehouse import router as product_router
 from app.routers.user_inventory import router as user_inventory_router
+from app.routers import detection
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -97,9 +99,11 @@ def status():
     return {"status": "OK", "message": "Server Is Running"}
 
 
+
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(product_router, prefix="/product", tags=["Product Inventory"])
 app.include_router(user_inventory_router, prefix="/product", tags=["User Inventory"])
+app.include_router(detection.router, prefix="/yolo", tags=["YOLO Detection"])
 
 
 async def send_notification_to_user(user_id: str, message: dict):
