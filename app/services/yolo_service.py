@@ -2,6 +2,20 @@ from ultralytics import YOLO
 import cv2
 import numpy as np
 import os
+from cloudinary.uploader import upload
+import cloudinary
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Configure Cloudinary
+cloudinary.config( 
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"), 
+    api_key=os.getenv("CLOUDINARY_API_KEY"), 
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"), 
+    secure=True
+)
 
 model = YOLO("best.pt")
 UPLOAD_FOLDER = "uploads"
@@ -12,12 +26,11 @@ def get_average_color(image):
         return None
     return np.mean(image, axis = (0,1))
 
-def detect_objects(file_path :str):
+def detect_objects(file_path: str):
     img = cv2.imread(file_path)
     if img is None:
         raise ValueError(f"Could not load image at {file_path}")
-    results = model.predict(source=img, conf= 0.25)
-
+    results = model.predict(source=img, conf=0.25)
 
     detections = []
     for result in results:
@@ -55,14 +68,18 @@ def detect_objects(file_path :str):
         return {
             "detections": [],
             "message": "No objects detected",
-            "annotated_image_path": file_path  # original image path
+            "annotated_image_url": None
         }
 
-    # Save annotated image only if detections exist
-    annotated_path = file_path.replace(".", "_annotated.")
-    cv2.imwrite(annotated_path, img)
+    # Save the annotated image to a temporary file
+    annotated_image_path = os.path.join(UPLOAD_FOLDER, "annotated_image.jpg")
+    cv2.imwrite(annotated_image_path, img)
+
+    # Upload the annotated image to Cloudinary
+    upload_result = upload(annotated_image_path)
+    annotated_image_url = upload_result.get("secure_url")
 
     return {
         "detections": detections,
-        "annotated_image_path": annotated_path
+        "annotated_image_url": annotated_image_url
     }

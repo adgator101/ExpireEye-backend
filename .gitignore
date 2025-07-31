@@ -17,3 +17,5 @@ alembic/versions/
 .DS_Store
 
 best.pt
+
+uploads/
