@@ -10,21 +10,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configure Cloudinary
-cloudinary.config( 
-    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"), 
-    api_key=os.getenv("CLOUDINARY_API_KEY"), 
-    api_secret=os.getenv("CLOUDINARY_API_SECRET"), 
-    secure=True
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True,
 )
 
 model = YOLO("best.pt")
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+
 def get_average_color(image):
     if image.size == 0:
         return None
-    return np.mean(image, axis = (0,1))
+    return np.mean(image, axis=(0, 1))
+
 
 def detect_objects(file_path: str):
     img = cv2.imread(file_path)
@@ -50,25 +52,34 @@ def detect_objects(file_path: str):
                 else:
                     avg_color_rgb = None
 
-                detections.append({
-                    "class": names[cls_id],
-                    "confidence": conf,
-                    "bbox": [x1, y1, x2, y2],
-                    "avg_color_rgb": avg_color_rgb
-                })
+                detections.append(
+                    {
+                        "class": names[cls_id],
+                        "confidence": conf,
+                        "bbox": [x1, y1, x2, y2],
+                        "avg_color_rgb": avg_color_rgb,
+                    }
+                )
 
                 # Draw bounding box and label
                 label = f"{names[cls_id]} {conf:.2f}"
                 cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(img, label, (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                cv2.putText(
+                    img,
+                    label,
+                    (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2,
+                )
 
     # If no detections found, you can handle it
     if not detections:
         return {
             "detections": [],
             "message": "No objects detected",
-            "annotated_image_url": None
+            "annotated_image_url": None,
         }
 
     # Save the annotated image to a temporary file
@@ -79,7 +90,4 @@ def detect_objects(file_path: str):
     upload_result = upload(annotated_image_path)
     annotated_image_url = upload_result.get("secure_url")
 
-    return {
-        "detections": detections,
-        "annotated_image_url": annotated_image_url
-    }
+    return {"detections": detections, "annotated_image_url": annotated_image_url}
