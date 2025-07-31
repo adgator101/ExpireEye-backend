@@ -14,6 +14,7 @@ from datetime import datetime
 from app.routers.auth import router as auth_router
 from app.routers.warehouse import router as product_router
 from app.routers.user_inventory import router as user_inventory_router
+from app.routers.user import router as user_router
 from app.routers import detection
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -26,6 +27,7 @@ scheduler = AsyncIOScheduler()
 
 origins = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 notification_connections = {}
@@ -35,12 +37,17 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "Authorization"],
 )
 
 
 @app.middleware("http")
 async def access_token_middleware(request: Request, call_next):
+
+    # Skip access token check for preflight requests
+    if request.method == "OPTIONS":
+        return await call_next(request)
+
     public_paths = [
         "/api/auth/login",
         "/api/auth/signup",
@@ -54,7 +61,14 @@ async def access_token_middleware(request: Request, call_next):
     if request.url.path in public_paths:
         return await call_next(request)
 
-    access_token = request.cookies.get("access_token")
+    # access_token = request.cookies.get("access_token")
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Authorization header missing or invalid."},
+        )
+    access_token = auth_header.split("Bearer ")[-1].strip()
 
     if not access_token:
         return JSONResponse(
@@ -103,6 +117,7 @@ def status():
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(product_router, prefix="/product", tags=["Product Inventory"])
 app.include_router(user_inventory_router, prefix="/product", tags=["User Inventory"])
+app.include_router(user_router, prefix="/user", tags=["User Profile"])
 app.include_router(detection.router, prefix="/yolo", tags=["YOLO Detection"])
 
 
@@ -191,12 +206,12 @@ async def send_notification(websocket: WebSocket, access_token: str = Query(None
     if not access_token:
         await websocket.close(code=1008, reason="Access token required")
 
+    await websocket.accept()
+
     payload = decode_access_token(access_token)
     user_id = payload.get("userId")
 
     notification_connections[user_id] = websocket
-
-    await websocket.accept()
 
     await websocket.send_text(
         json.dumps(

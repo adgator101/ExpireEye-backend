@@ -32,11 +32,13 @@ class AddUserProductRequest(BaseModel):
     name: str
     quantity: int
     expiryDate: str
+    notes: Optional[str] = None
 
 
 class UpdateUserProductRequest(BaseModel):
     quantity: Optional[int] = None
     expiryDate: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class UpdateProductRequest(BaseModel):

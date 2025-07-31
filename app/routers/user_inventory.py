@@ -22,6 +22,7 @@ def add_user_product(
     product_name = product.name
     quantity = product.quantity
     expiry_date = (datetime.utcnow() + timedelta(seconds=20)).isoformat()
+    notes = product.notes if product.notes else ""
 
     exists_user = db.query(User).filter_by(id=user_id).first()
 
@@ -51,6 +52,7 @@ def add_user_product(
         "quantity": quantity,
         "expiryDate": expiry_date,
         "status": "active",
+        "notes": notes,
         "addedAt": datetime.utcnow().isoformat(),
         "updatedAt": datetime.utcnow().isoformat(),
     }
@@ -107,6 +109,7 @@ def get_user_products(request: Request, db: Session = Depends(get_db)):
                     "nutrition": nutrition,
                     "addedAt": product.addedAt,
                     "status": product.status,
+                    "notes": product.notes,
                     "updatedAt": product.updatedAt,
                 }
             )
@@ -120,6 +123,8 @@ def get_user_products(request: Request, db: Session = Depends(get_db)):
                     "expiryDate": product.expiryDate,
                     "nutrition": None,
                     "addedAt": product.addedAt,
+                    "status": product.status,
+                    "notes": product.notes,
                     "updatedAt": product.updatedAt,
                 }
             )
@@ -168,6 +173,10 @@ def update_user_product(
     existing_user_product.expiryDate = (
         product.expiryDate if product.expiryDate else existing_user_product.expiryDate
     )
+    existing_user_product.notes = (
+        product.notes if product.notes else existing_user_product.notes
+    )
+
     existing_user_product.updatedAt = datetime.utcnow().isoformat()
 
     db.commit()
@@ -178,6 +187,7 @@ def update_user_product(
         "productId": existing_user_product.productId,
         "quantity": existing_user_product.quantity,
         "expiryDate": existing_user_product.expiryDate,
+        "notes": existing_user_product.notes,
     }
 
 

@@ -19,5 +19,6 @@ class UserProduct(Base):
     quantity = Column(Integer, nullable=False)
     expiryDate = Column(String(255), nullable=False)
     status = Column(String(20), nullable=False, default=UserProductStatus.active)
+    notes = Column(String(255), nullable=True)
     addedAt = Column(String(255), nullable=False)
     updatedAt = Column(String(255), nullable=False)
