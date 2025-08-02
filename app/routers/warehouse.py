@@ -56,15 +56,25 @@ async def add_product(
         raise HTTPException(
             status_code=404, detail="User with the provided userId does not exist."
         )
+    
+    
 
-    food_nutrition = fetch_nutrition(product_name)[0]
+    food_nutrition = fetch_nutrition(product_name)
 
     nutrition_data = {
-        "protein": check_nutrition_exists("protein_g", food_nutrition),
-        "carbohydrate": check_nutrition_exists("carbohydrates_total_g", food_nutrition),
-        "fat": check_nutrition_exists("fat_total_g", food_nutrition),
-        "fiber": check_nutrition_exists("fiber_g", food_nutrition),
-        "calories": check_nutrition_exists("calories", food_nutrition),
+        "energy_kcal": check_nutrition_exists("Energy (KCAL)", food_nutrition),
+        "carbohydrate": check_nutrition_exists("Carbohydrate, by difference (G)", food_nutrition),
+        "total_sugars": check_nutrition_exists("Total Sugars (G)", food_nutrition),
+        "fiber": check_nutrition_exists("Fiber, total dietary (G)", food_nutrition),
+        "protein": check_nutrition_exists("Protein (G)", food_nutrition),
+        "saturated_fat": check_nutrition_exists("Fatty acids, total saturated (G)", food_nutrition),
+        "vitamin_a": check_nutrition_exists("Vitamin A, IU (IU)", food_nutrition),
+        "vitamin_c": check_nutrition_exists("Vitamin C, total ascorbic acid (MG)", food_nutrition),
+        "potassium": check_nutrition_exists("Potassium, K (MG)", food_nutrition),
+        "iron": check_nutrition_exists("Iron, Fe (MG)", food_nutrition),
+        "calcium": check_nutrition_exists("Calcium, Ca (MG)", food_nutrition),
+        "sodium": check_nutrition_exists("Sodium, Na (MG)", food_nutrition),
+        "cholesterol": check_nutrition_exists("Cholesterol (MG)", food_nutrition),
         "addedAt": datetime.utcnow().isoformat(),
     }
 
@@ -119,12 +129,21 @@ def get_products(
                 Nutrition.id == product.nutritionId
             ).first()
             nutrition = {
-                "protein": nutrition.protein,
+                "energy_kcal": nutrition.energy_kcal,
                 "carbohydrate": nutrition.carbohydrate,
-                "fat": nutrition.fat,
+                "protein": nutrition.protein,
                 "fiber": nutrition.fiber,
-                "calories": nutrition.calories,
+                "total_sugars": nutrition.total_sugars,
+                "saturated_fat": nutrition.saturated_fat,
+                "vitamin_a": nutrition.vitamin_a,
+                "vitamin_c": nutrition.vitamin_c,
+                "potassium": nutrition.potassium,
+                "iron": nutrition.iron,
+                "calcium": nutrition.calcium,
+                "sodium": nutrition.sodium,
+                "cholesterol": nutrition.cholesterol,
             }
+
         result.append(
             {
                 "id": product.id,
