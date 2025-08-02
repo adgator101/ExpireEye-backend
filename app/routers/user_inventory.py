@@ -89,11 +89,19 @@ def get_user_products(request: Request, db: Session = Depends(get_db)):
             )
             nutrition = (
                 {
-                    "protein": nutrition_data.protein,
+                    "energy_kcal": nutrition_data.energy_kcal,
                     "carbohydrate": nutrition_data.carbohydrate,
-                    "fat": nutrition_data.fat,
+                    "total_sugars": nutrition_data.total_sugars,
                     "fiber": nutrition_data.fiber,
-                    "calories": nutrition_data.calories,
+                    "protein": nutrition_data.protein,
+                    "saturated_fat": nutrition_data.saturated_fat,
+                    "vitamin_a": nutrition_data.vitamin_a,
+                    "vitamin_c": nutrition_data.vitamin_c,
+                    "potassium": nutrition_data.potassium,
+                    "iron": nutrition_data.iron,
+                    "calcium": nutrition_data.calcium,
+                    "sodium": nutrition_data.sodium,
+                    "cholesterol": nutrition_data.cholesterol,
                 }
                 if nutrition_data
                 else None
