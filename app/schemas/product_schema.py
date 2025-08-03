@@ -3,11 +3,19 @@ from typing import Optional, List
 
 
 class NutritionResponse(BaseModel):
-    protein: Optional[str] = "0.0"
-    carbohydrate: Optional[str] = "0.0"
-    fat: Optional[str] = "0.0"
-    fiber: Optional[str] = "0.0"
-    calories: Optional[str] = "0.0"
+    energy_kcal: str
+    carbohydrate: str
+    protein: str
+    fiber: str
+    total_sugars: str
+    saturated_fat: str
+    vitamin_a: str
+    vitamin_c: str
+    potassium: str
+    iron: str
+    calcium: str
+    sodium: str
+    cholesterol: str
 
 
 class ProductResponse(BaseModel):
