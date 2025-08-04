@@ -54,6 +54,9 @@ def login(data: LoginRequest, response: Response, db: Session = Depends(get_db))
 
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail="Internal server error")
+    except Exception as e:
+        print("Login error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/signup")
@@ -120,3 +123,6 @@ def signup(data: RegisterRequest, response: Response, db: Session = Depends(get_
         }
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail="Internal server error")
+    except Exception as e:
+        print("Signup error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
