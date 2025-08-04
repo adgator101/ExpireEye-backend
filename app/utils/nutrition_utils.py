@@ -35,6 +35,8 @@ def fetch_nutrition(food_name: str) -> dict:
         # Format like "Energy (KCAL)" or "Vitamin C, total ascorbic acid (MG)"
         if name and unit:
             key = f"{name} ({unit})"
+            if isinstance(value, (int, float)):
+                value = f"{value:.2f}"  # Format to 2 decimal places
             food_nutrition[key] = value
 
     return food_nutrition

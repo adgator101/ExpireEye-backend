@@ -56,20 +56,24 @@ async def add_product(
         raise HTTPException(
             status_code=404, detail="User with the provided userId does not exist."
         )
-    
-    
 
     food_nutrition = fetch_nutrition(product_name)
 
     nutrition_data = {
         "energy_kcal": check_nutrition_exists("Energy (KCAL)", food_nutrition),
-        "carbohydrate": check_nutrition_exists("Carbohydrate, by difference (G)", food_nutrition),
+        "carbohydrate": check_nutrition_exists(
+            "Carbohydrate, by difference (G)", food_nutrition
+        ),
         "total_sugars": check_nutrition_exists("Total Sugars (G)", food_nutrition),
         "fiber": check_nutrition_exists("Fiber, total dietary (G)", food_nutrition),
         "protein": check_nutrition_exists("Protein (G)", food_nutrition),
-        "saturated_fat": check_nutrition_exists("Fatty acids, total saturated (G)", food_nutrition),
+        "saturated_fat": check_nutrition_exists(
+            "Fatty acids, total saturated (G)", food_nutrition
+        ),
         "vitamin_a": check_nutrition_exists("Vitamin A, IU (IU)", food_nutrition),
-        "vitamin_c": check_nutrition_exists("Vitamin C, total ascorbic acid (MG)", food_nutrition),
+        "vitamin_c": check_nutrition_exists(
+            "Vitamin C, total ascorbic acid (MG)", food_nutrition
+        ),
         "potassium": check_nutrition_exists("Potassium, K (MG)", food_nutrition),
         "iron": check_nutrition_exists("Iron, Fe (MG)", food_nutrition),
         "calcium": check_nutrition_exists("Calcium, Ca (MG)", food_nutrition),
@@ -110,9 +114,6 @@ def get_products(
     db: Session = Depends(get_db),
     name: str = Query(None, description="Filter products by name"),
 ):
-    access_token = request.state.user
-
-    print(f"Access Token: {access_token}")
     if name:
         products = db.query(Product).filter(Product.name.ilike(f"%{name}%")).all()
     else:
