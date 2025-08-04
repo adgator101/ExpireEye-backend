@@ -13,6 +13,7 @@ from app.models.scanlog_model import ScanLog
 from app.models.nutrition_model import Nutrition
 from app.models.notification_model import Notification
 from app.models.user_product import UserProduct
+import urllib.parse
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -27,18 +28,23 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
-config.set_main_option(
-    "sqlalchemy.url",
-    f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
+# config.set_main_option(
+#     "sqlalchemy.url",
+#     f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
+# )
+
+DATABASE_URL = (
+    f"mssql+pyodbc://{DB_USER}:{urllib.parse.quote_plus(DB_PASSWORD)}"
+    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}?driver=ODBC+Driver+17+for+SQL+Server"
 )
 
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
-# for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 # target_metadata = None
@@ -97,3 +103,4 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+# for 'autogenerate' support
