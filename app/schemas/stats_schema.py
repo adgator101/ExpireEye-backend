@@ -15,15 +15,26 @@ class WastedVsEatenItem(BaseModel):
     status: str
     count: int
 
-class NutrientsResponse(BaseModel):
-    item: str
-    nutrients: Dict[str, float]  # or str if you keep as strings
-
 
 class ExpiredProductItem(BaseModel):
     date: str
     expired_count: int
 
-class NutrientsDetailResponse(BaseModel):
+class NutrientsDetailData(BaseModel):
+    energy_kcal: float
+    carbohydrate: float
+    protein: float
+    fiber: float
+    total_sugars: float
+    saturated_fat: float
+    vitamin_a: float
+    vitamin_c: float
+    potassium: float
+    iron: float
+    calcium: float
+    sodium: float
+    cholesterol: float
+
+class NutrientsResponse(BaseModel):
     item: str
-    nutrients: Dict[str, float]
+    nutrients: NutrientsDetailData
