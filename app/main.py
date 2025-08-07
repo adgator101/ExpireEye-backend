@@ -15,8 +15,9 @@ from app.routers.auth import router as auth_router
 from app.routers.warehouse import router as product_router
 from app.routers.user_inventory import router as user_inventory_router
 from app.routers.user import router as user_router
-from app.routers import detection
 from app.routers.notification_router import router as notification_router
+from app.routers.detection import router as detection_router
+from app.routers.stats import router as stats_router
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -120,8 +121,9 @@ app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(product_router, prefix="/product", tags=["Product Inventory"])
 app.include_router(user_inventory_router, prefix="/product", tags=["User Inventory"])
 app.include_router(user_router, prefix="/user", tags=["User Profile"])
-app.include_router(detection.router, prefix="/yolo", tags=["YOLO Detection"])
 app.include_router(notification_router, prefix="/notification", tags=["Notifications"])
+app.include_router(detection_router, prefix="/yolo", tags=["YOLO Detection"])
+app.include_router(stats_router, prefix="/stats", tags=["Statistics"])
 
 
 @app.on_event("startup")
