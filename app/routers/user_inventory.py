@@ -8,12 +8,17 @@ from app.schemas.product_schema import AddUserProductRequest, UpdateUserProductR
 from app.models.user_product import UserProduct
 from app.utils.product_utils import check_user_product_exists
 from datetime import datetime, timedelta
+from app.models.notification_model import Notification
+from app.services.notification_service import (
+    send_notification_to_user,
+    add_notification_to_db,
+)
 
 router = APIRouter()
 
 
 @router.post("/user/add")
-def add_user_product(
+async def add_user_product(
     product: AddUserProductRequest, request: Request, db: Session = Depends(get_db)
 ):
     access_token = request.state.user
@@ -23,7 +28,9 @@ def add_user_product(
     quantity = product.quantity
     expiry_date = (datetime.utcnow() + timedelta(seconds=20)).isoformat()
     notes = product.notes if product.notes else ""
+    is_scanned_product = product.isScannedProduct
 
+    print("is_scanned_product:", is_scanned_product)
     exists_user = db.query(User).filter_by(id=user_id).first()
 
     if not exists_user:
@@ -61,6 +68,32 @@ def add_user_product(
     db.add(new_user_product)
     db.commit()
     db.refresh(new_user_product)
+
+    if is_scanned_product:
+        await send_notification_to_user(
+            user_id,
+            {
+                "type": "Product_Scanned",
+                "message": "Product Scanned successfully",
+                "data": {
+                    "name": product_name,  # Access the "name" key
+                    # "confidence": detection[
+                    #     "confidence"
+                    # ],  # Access the "confidence" key
+                    "confidence": 0.9,  # Placeholder confidence value
+                    "quantity": product.quantity,
+                    "notes": "Detected by YOLO with 90% confidence",
+                    "expiryDate": expiry_date,
+                },
+            },
+        )
+
+        await add_notification_to_db(
+            user_id=user_id,
+            message="Product Scanned successfully",
+            type="info",
+            db=db,
+        )
 
     return {
         "message": "New Product added to user inventory successfully",

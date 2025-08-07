@@ -54,7 +54,7 @@ def detect_objects(file_path: str):
 
                 detections.append(
                     {
-                        "class": names[cls_id],
+                        "name": names[cls_id],
                         "confidence": conf,
                         "bbox": [x1, y1, x2, y2],
                         "avg_color_rgb": avg_color_rgb,
@@ -69,9 +69,9 @@ def detect_objects(file_path: str):
                     label,
                     (x1, y1 - 10),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (0, 255, 0),
                     2,
+                    (0, 255, 0),
+                    8,
                 )
 
     # If no detections found, you can handle it
@@ -82,6 +82,9 @@ def detect_objects(file_path: str):
             "annotated_image_url": None,
         }
 
+    # Get the highest confidence detection
+    highest_confidence_detection = max(detections, key=lambda d: d["confidence"])
+
     # Save the annotated image to a temporary file
     annotated_image_path = os.path.join(UPLOAD_FOLDER, "annotated_image.jpg")
     cv2.imwrite(annotated_image_path, img)
@@ -90,4 +93,7 @@ def detect_objects(file_path: str):
     upload_result = upload(annotated_image_path)
     annotated_image_url = upload_result.get("secure_url")
 
-    return {"detections": detections, "annotated_image_url": annotated_image_url}
+    return {
+        "detection": highest_confidence_detection,
+        "annotated_image_url": annotated_image_url,
+    }
