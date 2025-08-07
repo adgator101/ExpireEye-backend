@@ -41,6 +41,7 @@ class AddUserProductRequest(BaseModel):
     quantity: int
     expiryDate: str
     notes: Optional[str] = None
+    isScannedProduct: Optional[bool] = False
 
 
 class UpdateUserProductRequest(BaseModel):
