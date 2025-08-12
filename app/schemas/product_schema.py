@@ -37,9 +37,11 @@ class AddProductRequest(BaseModel):
 
 
 class AddUserProductRequest(BaseModel):
-    name: str
-    quantity: int
-    expiryDate: str
+    name: Optional[str] = None
+    quantity: Optional[int] = 1
+    category: Optional[str] = "Uncategorized"
+    # barcode: Optional[str] = None
+    expiryDate: Optional[str] = None
     notes: Optional[str] = None
     isScannedProduct: Optional[bool] = False
 
@@ -54,4 +56,3 @@ class UpdateProductRequest(BaseModel):
     name: Optional[str] = None
     category: Optional[str] = None
     barcode: Optional[str] = None
-    nutritionId: Optional[str] = None

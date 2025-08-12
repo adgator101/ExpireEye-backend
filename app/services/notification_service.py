@@ -51,9 +51,12 @@ async def notification_websocket(websocket: WebSocket, access_token: str = Query
     try:
         while True:
             data = await websocket.receive_text()
-            await websocket.send_text(
-                json.dumps({"message": f"Notification received: {data}"})
-            )
+            if data == "PING":
+                await websocket.send_text(json.dumps({"type": "pong"}))
+            else:
+                await websocket.send_text(
+                    json.dumps({"message": f"Notification received: {data}"})
+                )
     except WebSocketDisconnect:
         print(f"WebSocket disconnected for user {user_id}")
         if user_id in notification_connections:
