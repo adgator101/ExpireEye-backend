@@ -2,7 +2,6 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 import shutil
 import os
 from app.services.yolo_service import detect_objects
-from app.services.notification_service import send_notification_to_user
 from datetime import datetime
 import logging
 

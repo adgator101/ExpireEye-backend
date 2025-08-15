@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, HTTPException, Depends, File, UploadFile
+from fastapi import APIRouter, Request, HTTPException, Depends, File, UploadFile, Query
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.product_model import Product
@@ -6,12 +6,18 @@ from app.models.nutrition_model import Nutrition
 from app.models.user_model import User
 from app.schemas.product_schema import AddUserProductRequest, UpdateUserProductRequest
 from app.models.user_product import UserProduct
-from app.utils.product_utils import check_user_product_exists
+from app.utils.product_utils import (
+    get_product_name_from_barcode,
+    get_product_shelf_life,
+)
 from datetime import datetime, timedelta
 from app.models.notification_model import Notification
-from app.services.notification_service import (
-    send_notification_to_user,
-    add_notification_to_db,
+from app.services.user_product_service import (
+    create_user_product,
+    get_user_product_list,
+    update_user_product_data,
+    delete_user_product_data,
+    add_mass_user_products,
 )
 
 router = APIRouter()
@@ -19,162 +25,60 @@ router = APIRouter()
 
 @router.post("/user/add")
 async def add_user_product(
-    product: AddUserProductRequest, request: Request, db: Session = Depends(get_db)
+    product: AddUserProductRequest,
+    request: Request,
+    barcode: str = Query(None, description="Barcode of the product"),
+    db: Session = Depends(get_db),
 ):
+    if barcode:
+        product_name = get_product_name_from_barcode(barcode, db)
+        if not product_name:
+            raise HTTPException(
+                status_code=404,
+                detail="Product not found for the provided barcode",
+            )
+        quantity = 1
+        notes = f"Scanned Via Barcode with Code {barcode}"
+        is_scanned_product = True
+        expiry_date = (datetime.utcnow() + timedelta(seconds=20)).isoformat()
+    else:
+        product_name = product.name
+        quantity = product.quantity
+        notes = product.notes if product.notes else ""
+        is_scanned_product = product.isScannedProduct
+        if is_scanned_product:
+            shelf_life = get_product_shelf_life(product_name)
+            expiry_date = (datetime.utcnow() + timedelta(days=shelf_life)).isoformat()
+        else:
+            expiry_date = (datetime.utcnow() + timedelta(seconds=10)).isoformat()
     access_token = request.state.user
     user_id = access_token.get("userId")
-
-    product_name = product.name
-    quantity = product.quantity
-    expiry_date = (datetime.utcnow() + timedelta(seconds=20)).isoformat()
-    notes = product.notes if product.notes else ""
-    is_scanned_product = product.isScannedProduct
-
+    # expiry_date = product.expiryDate
     print("is_scanned_product:", is_scanned_product)
-    exists_user = db.query(User).filter_by(id=user_id).first()
 
-    if not exists_user:
-        raise HTTPException(
-            status_code=404, detail="User with the provided userId does not exist."
-        )
-
-    if not product_name or not expiry_date:
-        raise HTTPException(
-            status_code=400,
-            detail="All fields are required: name, quantity, and expiryDate.",
-        )
-
-    check_product = db.query(Product).filter(Product.name == product_name).first()
-
-    if not check_product:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Product '{product_name}' does not exist in warehouse. Please add it first.",
-        )
-    product_id = check_product.id if check_product else None
-
-    new_product = {
-        "userId": access_token.get("userId"),
-        "productId": product_id,
-        "quantity": quantity,
-        "expiryDate": expiry_date,
-        "status": "active",
-        "notes": notes,
-        "addedAt": datetime.utcnow().isoformat(),
-        "updatedAt": datetime.utcnow().isoformat(),
-    }
-
-    new_user_product = UserProduct(**new_product)
-    db.add(new_user_product)
-    db.commit()
-    db.refresh(new_user_product)
-
-    if is_scanned_product:
-        await send_notification_to_user(
-            user_id,
-            {
-                "type": "Product_Scanned",
-                "message": "Product Scanned successfully",
-                "data": {
-                    "name": product_name,  # Access the "name" key
-                    # "confidence": detection[
-                    #     "confidence"
-                    # ],  # Access the "confidence" key
-                    "confidence": 0.9,  # Placeholder confidence value
-                    "quantity": product.quantity,
-                    "notes": "Detected by YOLO with 90% confidence",
-                    "expiryDate": expiry_date,
-                },
-            },
-        )
-
-        await add_notification_to_db(
-            user_id=user_id,
-            message="Product Scanned successfully",
-            type="info",
-            db=db,
-        )
-
-    return {
-        "message": "New Product added to user inventory successfully",
-        "productId": new_user_product.productId,
-        "name": product_name.title(),
-        "quantity": quantity,
-        "expiryDate": expiry_date,
-    }
+    result = await create_user_product(
+        user_id=user_id,
+        product_name=product_name,
+        quantity=quantity,
+        expiry_date=expiry_date,
+        notes=notes,
+        is_scanned_product=is_scanned_product,
+        db=db,
+    )
+    return result
 
 
 @router.get("/user/list")
-def get_user_products(request: Request, db: Session = Depends(get_db)):
+async def get_user_products(request: Request, db: Session = Depends(get_db)):
     access_token = request.state.user
     user_id = access_token.get("userId")
 
-    user_products = db.query(UserProduct).filter(UserProduct.userId == user_id).all()
-
-    user_product_data = []
-    for product in user_products:
-        product_data = db.query(Product).filter(Product.id == product.productId).first()
-        if product_data:
-            nutrition_data = (
-                db.query(Nutrition)
-                .filter(Nutrition.id == product_data.nutritionId)
-                .first()
-            )
-            nutrition = (
-                {
-                    "energy_kcal": nutrition_data.energy_kcal,
-                    "carbohydrate": nutrition_data.carbohydrate,
-                    "total_sugars": nutrition_data.total_sugars,
-                    "fiber": nutrition_data.fiber,
-                    "protein": nutrition_data.protein,
-                    "saturated_fat": nutrition_data.saturated_fat,
-                    "vitamin_a": nutrition_data.vitamin_a,
-                    "vitamin_c": nutrition_data.vitamin_c,
-                    "potassium": nutrition_data.potassium,
-                    "iron": nutrition_data.iron,
-                    "calcium": nutrition_data.calcium,
-                    "sodium": nutrition_data.sodium,
-                    "cholesterol": nutrition_data.cholesterol,
-                }
-                if nutrition_data
-                else None
-            )
-
-            user_product_data.append(
-                {
-                    "id": product_data.id,
-                    "name": product_data.name,
-                    "category": product_data.category,
-                    "quantity": product.quantity,
-                    "expiryDate": product.expiryDate,
-                    "nutrition": nutrition,
-                    "addedAt": product.addedAt,
-                    "status": product.status,
-                    "notes": product.notes,
-                    "updatedAt": product.updatedAt,
-                }
-            )
-
-        else:
-            user_product_data.append(
-                {
-                    "id": product.productId,
-                    "name": "Unknown Product",
-                    "category": "Unknown Category",
-                    "expiryDate": product.expiryDate,
-                    "nutrition": None,
-                    "addedAt": product.addedAt,
-                    "status": product.status,
-                    "notes": product.notes,
-                    "updatedAt": product.updatedAt,
-                }
-            )
-
-    return {"products": user_product_data}
+    result = await get_user_product_list(user_id, db)
+    return {"products": result}
 
 
 @router.put("/user/update/{product_id}")
-def update_user_product(
+async def update_user_product(
     product_id: str,
     product: UpdateUserProductRequest,
     request: Request,
@@ -184,123 +88,38 @@ def update_user_product(
     access_token = request.state.user
     user_id = access_token.get("userId")
 
-    existing_user_product = check_user_product_exists(user_id, product_id, db)
-
-    if not existing_user_product:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Product with ID {product_id} does not exist in user inventory.",
-        )
-
-    if product.quantity is None or product.expiryDate is None:
-        raise HTTPException(
-            status_code=400,
-            detail="Both quantity and expiryDate are required for update.",
-        )
-
-    # Check if the new values are the same as existing ones
-    if (
-        existing_user_product.quantity == product.quantity
-        and existing_user_product.expiryDate == product.expiryDate
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail="No changes detected. Please provide new values for quantity or expiryDate.",
-        )
-
-    existing_user_product.quantity = (
-        product.quantity if product.quantity else existing_user_product.quantity
-    )
-    existing_user_product.expiryDate = (
-        product.expiryDate if product.expiryDate else existing_user_product.expiryDate
-    )
-    existing_user_product.notes = (
-        product.notes if product.notes else existing_user_product.notes
+    result = await update_user_product_data(
+        user_id,
+        product_id,
+        {
+            "quantity": product.quantity,
+            "expiryDate": product.expiryDate,
+            "notes": product.notes,
+        },
+        db,
     )
 
-    existing_user_product.updatedAt = datetime.utcnow().isoformat()
-
-    db.commit()
-    db.refresh(existing_user_product)
-
-    return {
-        "message": "User product updated successfully",
-        "productId": existing_user_product.productId,
-        "quantity": existing_user_product.quantity,
-        "expiryDate": existing_user_product.expiryDate,
-        "notes": existing_user_product.notes,
-    }
+    return result
 
 
 @router.delete("/user/delete/{product_id}")
-def delete_user_product(
+async def delete_user_product(
     product_id: str, request: Request, db: Session = Depends(get_db)
 ):
     access_token = request.state.user
     user_id = access_token.get("userId")
 
-    existing_user_product = check_user_product_exists(user_id, product_id, db)
+    result = await delete_user_product_data(user_id, product_id, db)
 
-    if not existing_user_product:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Product with ID {product_id} does not exist in user inventory.",
-        )
-
-    db.delete(existing_user_product)
-    db.commit()
-
-    return {"message": "Product removed from user inventory successfully."}
+    return result
 
 
-@router.post("/user/scan", tags=["Scan User Product"])
-async def scan_user_product(
-    request: Request,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
+@router.post("/user/add-mass")
+async def add_mass_user_products_endpoint(
+    request: Request, body: dict, db: Session = Depends(get_db)
 ):
     access_token = request.state.user
     user_id = access_token.get("userId")
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="User not authenticated.")
-
-    contents = await file.read()
-
-    with open(f"app/static/{file.filename}", "wb") as f:
-        f.write(contents)
-
-    return {
-        "message": "File processed successfully",
-        "userId": user_id,
-        "fileName": file.filename,
-    }
-
-
-@router.get("/{barcode}")
-def get_product_by_barcode(barcode: str, db: Session = Depends(get_db)):
-    product = db.query(Product).filter(Product.barcode == barcode).first()
-
-    nutrition_data = (
-        db.query(Nutrition).filter(Nutrition.id == product.nutritionId).first()
-        if product
-        else None
-    )
-
-    if nutrition_data:
-        nutrition = {
-            "protein": nutrition_data.protein,
-            "carbohydrate": nutrition_data.carbohydrate,
-            "fat": nutrition_data.fat,
-            "fiber": nutrition_data.fiber,
-            "calories": nutrition_data.calories,
-        }
-
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found.")
-
-    return {
-        "productName": product.name,
-        "category": product.category,
-        "nutrition": nutrition if nutrition else {},
-    }
+    products = body.get("products", [])
+    result = await add_mass_user_products(user_id=user_id, products=products, db=db)
+    return result

@@ -25,8 +25,8 @@ engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,  # Ensures the connection is alive before using it
     pool_recycle=3600,  # Recycle connections every hour
-    pool_size=5,
-    max_overflow=2,
+    pool_size=10,
+    max_overflow=5,
     echo=False,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

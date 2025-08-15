@@ -1,18 +1,17 @@
-from fastapi import FastAPI, Request, WebSocket, Query
+import os
+import shutil
+from fastapi import FastAPI, Request, WebSocket, Query, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import request_validation_exception_handler
 from app.utils.jwt import decode_access_token
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.db.session import get_db
-from app.models.user_product import UserProduct
-from app.models.product_model import Product
 from datetime import datetime
 
 
 from app.routers.auth import router as auth_router
-from app.routers.warehouse import router as product_router
+from app.routers.product import router as product_router
 from app.routers.user_inventory import router as user_inventory_router
 from app.routers.user import router as user_router
 from app.routers.notification_router import router as notification_router
@@ -23,7 +22,11 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 import json
 from app.services.notification_service import notification_websocket
-from app.services.product_service import check_product_expiry
+from app.services.product_service import check_product_expiry, add_product_to_inventory
+
+import shutil
+import numpy as np
+import cv2
 
 app = FastAPI(root_path="/api", root_path_in_servers="/api")
 scheduler = AsyncIOScheduler()
@@ -31,10 +34,10 @@ scheduler = AsyncIOScheduler()
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://5ef6d8f4f07a.ngrok-free.app",
+    "https://expire-eye.vercel.app",
+    "https://476d2d8e876e.ngrok-free.app",
 ]
 
-notification_connections = {}
 
 app.add_middleware(
     CORSMiddleware,
@@ -115,6 +118,45 @@ async def custom_validation_exception_handler(
 @app.get("/status", tags=["Status"])
 def status():
     return {"status": "OK", "message": "Server Is Running"}
+
+
+@app.post("/qr", tags=["QR Code"])
+async def decode_qr_code(request: Request, file: UploadFile = File(...)):
+    access_token = request.state.user
+    user_id = access_token.get("userId")
+
+    image_bytes = await file.read()
+    np_arr = np.frombuffer(image_bytes, np.uint8)
+
+    print("Numpy array shape:", np_arr.shape)
+    # Decode image using OpenCV
+    img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+    filename = (
+        str(file.filename)
+        if file.filename
+        else f"qr_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+    )
+    file_path = os.path.join("uploads", filename)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Initialize QRCode detector
+    detector = cv2.QRCodeDetector()
+
+    # Detect and decode
+    data, bbox, _ = detector.detectAndDecode(img)
+
+    if bbox is not None and data:
+        # await add_product_to_inventory(
+        #     user_id=user_id,
+        #     product={"productName": data, "category": "Uncategorized"},
+        #     db=next(get_db()),
+        # )
+        return {"message": "QR Scanned successfully", "data": data}
+    else:
+        return {"error": "No QR code found in the image"}
 
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
