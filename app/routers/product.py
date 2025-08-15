@@ -16,6 +16,7 @@ from app.schemas.product_schema import (
     AddProductRequest,
     ProductListResponse,
     UpdateProductRequest,
+    MassProductRequest
 )
 
 from app.services.product_service import (
@@ -23,6 +24,7 @@ from app.services.product_service import (
     get_inventory_product_list,
     update_inventory_product_data,
     delete_inventory_product_data,
+    add_mass_products_to_inventory,
 )
 
 load_dotenv()
@@ -110,3 +112,17 @@ def get_products_barcode(db: Session = Depends(get_db)):
         for product in products
     ]
     return {"products": result}
+
+
+@router.post("/inventory/add-mass")
+async def add_mass_products(
+    request: Request,
+    body: MassProductRequest,
+    db: Session = Depends(get_db)
+):
+    access_token = request.state.user
+    user_id = access_token.get("userId")
+    result = await add_mass_products_to_inventory(
+        user_id=user_id, products=body.products, db=db
+    )
+    return result

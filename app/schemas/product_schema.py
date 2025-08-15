@@ -56,3 +56,12 @@ class UpdateProductRequest(BaseModel):
     name: Optional[str] = None
     category: Optional[str] = None
     barcode: Optional[str] = None
+
+
+class MassProductItem(BaseModel):
+    productName: str
+    category: str
+
+
+class MassProductRequest(BaseModel):
+    products: List[MassProductItem]

@@ -6,7 +6,10 @@ from app.models.nutrition_model import Nutrition
 from app.models.user_model import User
 from app.schemas.product_schema import AddUserProductRequest, UpdateUserProductRequest
 from app.models.user_product import UserProduct
-from app.utils.product_utils import get_product_name_from_barcode
+from app.utils.product_utils import (
+    get_product_name_from_barcode,
+    get_product_shelf_life,
+)
 from datetime import datetime, timedelta
 from app.models.notification_model import Notification
 from app.services.user_product_service import (
@@ -14,6 +17,7 @@ from app.services.user_product_service import (
     get_user_product_list,
     update_user_product_data,
     delete_user_product_data,
+    add_mass_user_products,
 )
 
 router = APIRouter()
@@ -36,15 +40,19 @@ async def add_user_product(
         quantity = 1
         notes = f"Scanned Via Barcode with Code {barcode}"
         is_scanned_product = True
+        expiry_date = (datetime.utcnow() + timedelta(seconds=20)).isoformat()
     else:
         product_name = product.name
         quantity = product.quantity
         notes = product.notes if product.notes else ""
         is_scanned_product = product.isScannedProduct
-
+        if is_scanned_product:
+            shelf_life = get_product_shelf_life(product_name)
+            expiry_date = (datetime.utcnow() + timedelta(days=shelf_life)).isoformat()
+        else:
+            expiry_date = (datetime.utcnow() + timedelta(seconds=10)).isoformat()
     access_token = request.state.user
     user_id = access_token.get("userId")
-    expiry_date = (datetime.utcnow() + timedelta(seconds=20)).isoformat()
     # expiry_date = product.expiryDate
     print("is_scanned_product:", is_scanned_product)
 
@@ -103,4 +111,15 @@ async def delete_user_product(
 
     result = await delete_user_product_data(user_id, product_id, db)
 
+    return result
+
+
+@router.post("/user/add-mass")
+async def add_mass_user_products_endpoint(
+    request: Request, body: dict, db: Session = Depends(get_db)
+):
+    access_token = request.state.user
+    user_id = access_token.get("userId")
+    products = body.get("products", [])
+    result = await add_mass_user_products(user_id=user_id, products=products, db=db)
     return result
