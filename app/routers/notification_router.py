@@ -20,6 +20,7 @@ def list_notifications(request: Request, db: Session = Depends(get_db)):
 
     if not notifications:
         return {"message": "No notifications found"}
+    db.close()
     return {
         "notifications": [
             {
@@ -27,7 +28,22 @@ def list_notifications(request: Request, db: Session = Depends(get_db)):
                 "type": notification.type,
                 "message": notification.message,
                 "createdAt": notification.created_at,
+                "isRead": notification.read,
             }
             for notification in notifications
         ]
     }
+
+
+@router.post("/mark-read/{notification_id}")
+def mark_notification_as_read(notification_id: str, db: Session = Depends(get_db)):
+    notification = (
+        db.query(Notification).filter(Notification.id == notification_id).first()
+    )
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    notification.read = True
+    db.commit()
+    db.refresh(notification)
+    db.close()
+    return {"message": "Notification marked as read"}
