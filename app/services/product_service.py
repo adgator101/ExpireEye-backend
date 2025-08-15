@@ -15,6 +15,7 @@ from app.models.nutrition_model import Nutrition
 from app.models.user_model import User
 from app.models.user_product import UserProduct
 from app.models.product_model import Product
+from app.models.notification_model import Notification
 
 
 async def check_product_expiry():
@@ -46,7 +47,25 @@ async def check_product_expiry():
         product.status = "expired"
         product.updatedAt = current_time
         db.add(product)
+
+        # notification = Notification(
+        #     userId=product.userId,
+        #     productName=product_details.name,
+        #     message=f"Product {product_details.name} has expired",
+        #     type="warning",
+        #     read=False,
+        #     created_at=current_time,
+        # )
+        notification = await add_notification_to_db(
+            user_id=str(product.userId),
+            productName=product_details.name,
+            message=f"Product {product_details.name} has expired",
+            type="warning",
+            db=db,
+        )
+
         notification_message = {
+            "id": notification.id,
             "type": "product_expiration",
             "message": f"Product {product_details.name} has expired",
             "productName": product_details.name,
@@ -54,14 +73,7 @@ async def check_product_expiry():
             "timestamp": current_time,
         }
         print("Attempting to send notification to user", {product.userId})
-
         await send_notification_to_user(str(product.userId), notification_message)
-        await add_notification_to_db(
-            user_id=str(product.userId),
-            message=f"Product {product_details.name} has expired",
-            type="warning",
-            db=db,
-        )
         db.commit()
     db.close()
 
@@ -204,23 +216,28 @@ async def update_inventory_product_data(product_id: str, product: dict, db: Sess
             detail=f"Product ID mismatch. Expected {existing_product.id}.",
         )
     # print("Existing Product Category:", existing_product.category)
-    if (
-        existing_product.name == product.get("name", "")
-        or existing_product.category == product.get("category", "")
-    ):
+    if existing_product.name == product.get(
+        "name", ""
+    ) or existing_product.category == product.get("category", ""):
         raise HTTPException(
             status_code=400,
             detail="No changes detected. Please provide new values for name or category.",
         )
 
     existing_product.name = (
-        product.get("name", "").title() if product.get("name", "") else existing_product.name
+        product.get("name", "").title()
+        if product.get("name", "")
+        else existing_product.name
     )
     existing_product.category = (
-        product.get("category", "") if product.get("category", "") else existing_product.category
+        product.get("category", "")
+        if product.get("category", "")
+        else existing_product.category
     )
     existing_product.barcode = (
-        product.get("barcode", "") if product.get("barcode", "") else existing_product.barcode
+        product.get("barcode", "")
+        if product.get("barcode", "")
+        else existing_product.barcode
     )
     existing_product.updatedAt = datetime.utcnow().isoformat()
 
@@ -249,3 +266,87 @@ async def delete_inventory_product_data(product_id: str, db: Session):
     db.commit()
 
     return {"message": "Product deleted successfully"}
+
+
+async def add_mass_products_to_inventory(user_id: str, products: list, db: Session):
+    """
+    Adds multiple products to the inventory for a user.
+    Returns a summary of successes and failures.
+    """
+    results = {"success": [], "failed": []}
+
+    for product in products:
+        try:
+            # Use attribute access for Pydantic objects
+            product_name = product.productName
+            category = product.category
+
+            if not product_name or not user_id:
+                results["failed"].append({
+                    "product": {"productName": product_name, "category": category},
+                    "reason": "Missing productName or userId"
+                })
+                continue
+
+            if len(product_name) < 3:
+                results["failed"].append({
+                    "product": {"productName": product_name, "category": category},
+                    "reason": "Product name must be at least 3 characters long"
+                })
+                continue
+
+            exists_user = db.query(User).filter_by(id=user_id).first()
+            if not exists_user:
+                results["failed"].append({
+                    "product": {"productName": product_name, "category": category},
+                    "reason": "User does not exist"
+                })
+                continue
+
+            product_barcode = generate_product_barcode(product_name)
+            food_nutrition = fetch_nutrition(product_name)
+            nutrition_data = {
+                "energy_kcal": check_nutrition_exists("Energy (KCAL)", food_nutrition),
+                "carbohydrate": check_nutrition_exists("Carbohydrate, by difference (G)", food_nutrition),
+                "total_sugars": check_nutrition_exists("Total Sugars (G)", food_nutrition),
+                "fiber": check_nutrition_exists("Fiber, total dietary (G)", food_nutrition),
+                "protein": check_nutrition_exists("Protein (G)", food_nutrition),
+                "saturated_fat": check_nutrition_exists("Fatty acids, total saturated (G)", food_nutrition),
+                "vitamin_a": check_nutrition_exists("Vitamin A, IU (IU)", food_nutrition),
+                "vitamin_c": check_nutrition_exists("Vitamin C, total ascorbic acid (MG)", food_nutrition),
+                "potassium": check_nutrition_exists("Potassium, K (MG)", food_nutrition),
+                "iron": check_nutrition_exists("Iron, Fe (MG)", food_nutrition),
+                "calcium": check_nutrition_exists("Calcium, Ca (MG)", food_nutrition),
+                "sodium": check_nutrition_exists("Sodium, Na (MG)", food_nutrition),
+                "cholesterol": check_nutrition_exists("Cholesterol (MG)", food_nutrition),
+                "addedAt": datetime.utcnow().isoformat(),
+            }
+            new_nutrition = Nutrition(**nutrition_data)
+            db.add(new_nutrition)
+            db.commit()
+            db.refresh(new_nutrition)
+
+            product_data = {
+                "name": product_name,
+                "category": category,
+                "barcode": product_barcode if product_barcode else "N/A",
+                "nutritionId": new_nutrition.id,
+                "addedAt": datetime.utcnow().isoformat(),
+            }
+            new_product = Product(**product_data)
+            db.add(new_product)
+            db.commit()
+            db.refresh(new_product)
+
+            results["success"].append({
+                "productId": new_product.id,
+                "name": new_product.name.title()
+            })
+        except Exception as e:
+            db.rollback()
+            results["failed"].append({
+                "product": {"productName": product_name, "category": category},
+                "reason": str(e)
+            })
+
+    return results

@@ -31,6 +31,14 @@ product_barcode_map = {
     "Yogurt": "YG5566778899",
     "Cheese": "CH9988776655",
     "Butter": "BU2233445566",
+    "Wheat": "WH7788990011",
+    "Flour": "FL4455667788",
+    "Oranges": "OR1122334455",
+    "Rice": "RC9988776655",
+    "Olive Oil": "OO1234567890",
+    "Sugar": "SU0987654321",
+    "Salt": "SA1122334455",
+    "Ginger": "GI5566778899",
 }
 
 
@@ -46,6 +54,31 @@ product_map = {
     "CK": "Cake",
     "CR": "Carrot",
     "8901491101813": "Lays",
+}
+
+SHELF_LIFE_MAP = {
+    # Fruits
+    "apple": 10,
+    "banana": 5,
+    "orange": 14,
+    "grape": 7,
+    "mango": 6,
+    "pineapple": 5,
+    "watermelon": 4,
+    "strawberry": 3,
+    "pear": 8,
+    "peach": 5,
+    # Vegetables
+    "tomato": 7,
+    "potato": 30,
+    "onion": 30,
+    "carrot": 21,
+    "broccoli": 5,
+    "cauliflower": 7,
+    "spinach": 5,
+    "lettuce": 5,
+    "cucumber": 7,
+    "capsicum": 7,
 }
 
 
@@ -91,6 +124,20 @@ def get_product_name_from_barcode(barcode: str, db: Session = None) -> str:
 
 def check_existing_product(product_id: str, db: Session):
     return db.query(Product).filter(Product.id == product_id).first()
+
+
+def get_product_shelf_life(product_name: str) -> int:
+    """
+    Retrieves the shelf life of a product based on its name.
+    Uses a predefined mapping for known products. For test purposes.
+    Params:
+        product_name (str): The name of the product.
+
+    Returns:
+        int: The shelf life in days or 0 if not found.
+    """
+    normalized_name = product_name.strip().lower()
+    return SHELF_LIFE_MAP.get(normalized_name, 0)
 
 
 def check_user_product_exists(user_id: str, product_id: str, db: Session):

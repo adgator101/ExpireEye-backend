@@ -75,6 +75,13 @@ async def create_user_product(
             .filter(Nutrition.id == product_exists.nutritionId)
             .first()
         )
+        await add_notification_to_db(
+            user_id=user_id,
+            message="Product Scanned successfully",
+            productName=product_name,
+            type="info",
+            db=db,
+        )
         await send_notification_to_user(
             user_id,
             {
@@ -108,13 +115,6 @@ async def create_user_product(
             },
         )
 
-        await add_notification_to_db(
-            user_id=user_id,
-            message="Product Scanned successfully",
-            type="info",
-            db=db,
-        )
-
     return {
         "message": "New Product added to user inventory successfully",
         "productId": new_user_product.productId,
@@ -125,7 +125,12 @@ async def create_user_product(
 
 
 async def get_user_product_list(user_id: str, db: Session):
-    user_products = db.query(UserProduct).filter(UserProduct.userId == user_id).all()
+    user_products = (
+        db.query(UserProduct)
+        .filter(UserProduct.userId == user_id)
+        .order_by(UserProduct.addedAt.desc())
+        .all()
+    )
 
     user_product_data = []
     for product in user_products:
@@ -207,20 +212,23 @@ async def update_user_product_data(
         )
 
     # Check if the new values are the same as existing ones
-    if (
-        existing_user_product.quantity == product.get("quantity")
-        and existing_user_product.expiryDate == product.get("expiryDate")
-    ):
+    if existing_user_product.quantity == product.get(
+        "quantity"
+    ) and existing_user_product.expiryDate == product.get("expiryDate"):
         raise HTTPException(
             status_code=400,
             detail="No changes detected. Please provide new values for quantity or expiryDate.",
         )
 
     existing_user_product.quantity = (
-        product.get("quantity") if product.get("quantity") else existing_user_product.quantity
+        product.get("quantity")
+        if product.get("quantity")
+        else existing_user_product.quantity
     )
     existing_user_product.expiryDate = (
-        product.get("expiryDate") if product.get("expiryDate") else existing_user_product.expiryDate
+        product.get("expiryDate")
+        if product.get("expiryDate")
+        else existing_user_product.expiryDate
     )
     existing_user_product.notes = (
         product.get("notes") if product.get("notes") else existing_user_product.notes
@@ -253,3 +261,72 @@ async def delete_user_product_data(user_id: str, product_id: str, db: Session):
     db.commit()
 
     return {"message": "Product removed from user inventory successfully."}
+
+
+async def add_mass_user_products(
+    user_id: str,
+    products: list,
+    db: Session,
+):
+    """
+    Adds multiple products to a user's inventory.
+    Each product should be a dict with: productName, quantity, expiryDate, notes, is_scanned_product.
+    Returns a summary of successes and failures.
+    """
+    results = {"success": [], "failed": []}
+
+    exists_user = db.query(User).filter_by(id=user_id).first()
+    if not exists_user:
+        return {"success": [], "failed": [{"reason": "User does not exist"}]}
+
+    for product in products:
+        try:
+            # If using Pydantic models, use attribute access; if dicts, use .get()
+            product_name = getattr(product, "productName", None) or product.get(
+                "productName"
+            )
+            quantity = getattr(product, "quantity", None) or product.get("quantity")
+            expiry_date = getattr(product, "expiryDate", None) or product.get(
+                "expiryDate"
+            )
+            notes = getattr(product, "notes", None) or product.get("notes", "")
+            is_scanned_product = getattr(
+                product, "is_scanned_product", None
+            ) or product.get("is_scanned_product", False)
+
+            if not product_name or not quantity or not expiry_date:
+                results["failed"].append(
+                    {
+                        "product": {
+                            "productName": product_name,
+                            "quantity": quantity,
+                            "expiryDate": expiry_date,
+                        },
+                        "reason": "Missing required fields",
+                    }
+                )
+                continue
+
+            res = await create_user_product(
+                user_id=user_id,
+                product_name=product_name,
+                quantity=quantity,
+                expiry_date=expiry_date,
+                notes=notes,
+                is_scanned_product=is_scanned_product,
+                db=db,
+            )
+            results["success"].append(res)
+        except Exception as e:
+            results["failed"].append(
+                {
+                    "product": {
+                        "productName": product_name,
+                        "quantity": quantity,
+                        "expiryDate": expiry_date,
+                    },
+                    "reason": str(e),
+                }
+            )
+
+    return results

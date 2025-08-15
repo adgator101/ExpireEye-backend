@@ -38,7 +38,6 @@ origins = [
     "https://476d2d8e876e.ngrok-free.app",
 ]
 
-notification_connections = {}
 
 app.add_middleware(
     CORSMiddleware,
